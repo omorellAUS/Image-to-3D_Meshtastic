@@ -6,6 +6,7 @@ uvicorn
 python-multipart
 Pillow
 rembg
+onnxruntime
 numpy
 trimesh
 huggingface-hub

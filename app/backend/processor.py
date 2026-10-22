@@ -19,8 +19,12 @@ _rembg_session = None
 def get_rembg_session():
     global _rembg_session
     if _rembg_session is None:
-        import rembg
-        _rembg_session = rembg.new_session()
+        try:
+            import rembg
+            _rembg_session = rembg.new_session()
+        except Exception as e:
+            print(f"rembg session failed: {e}")
+            _rembg_session = None
     return _rembg_session
 
 
@@ -39,13 +43,17 @@ def preprocess(
     foreground_ratio: float = 0.85,
 ) -> Image.Image:
     if remove_bg:
-        import rembg
-        session = get_rembg_session()
-        image = input_image.convert("RGB")
-        image = rembg.remove(image, session=session)
-        from tsr.utils import resize_foreground
-        image = resize_foreground(image, foreground_ratio)
-        image = fill_background(image)
+        try:
+            import rembg
+            session = get_rembg_session()
+            image = input_image.convert("RGB")
+            image = rembg.remove(image, session=session)
+            from tsr.utils import resize_foreground
+            image = resize_foreground(image, foreground_ratio)
+            image = fill_background(image)
+        except Exception as e:
+            print(f"Background removal failed: {e}")
+            image = input_image.convert("RGB")
     else:
         image = input_image
         if image.mode == "RGBA":
@@ -57,15 +65,27 @@ def preprocess(
 
 def generate_mesh(
     image: Image.Image,
-    mc_resolution: int = 256,
+    mc_resolution: int = 384,
     model_name: str = "triposr",
+    smooth: bool = True,
+    smooth_iterations: int = 5,
 ) -> trimesh.Trimesh:
     model = get_model(model_name)
     mesh = model.generate(image, mc_resolution=mc_resolution)
 
     mesh = mesh.copy()
     mesh.remove_unreferenced_vertices()
-    mesh.remove_degenerate_faces()
+    if hasattr(mesh, "remove_degenerate_faces"):
+        mesh.remove_degenerate_faces()
+    elif hasattr(mesh, "nondegenerate_faces"):
+        mesh.update_faces(mesh.nondegenerate_faces())
+
+    if smooth and smooth_iterations > 0:
+        try:
+            trimesh.smoothing.filter_laplacian(mesh, iterations=smooth_iterations)
+        except Exception as e:
+            print(f"Smoothing failed: {e}")
+
     mesh.fix_normals()
     return mesh
 
@@ -91,10 +111,10 @@ def process_image(
     input_image: Image.Image,
     remove_bg: bool = True,
     foreground_ratio: float = 0.85,
-    mc_resolution: int = 256,
+    mc_resolution: int = 384,
     formats: Tuple[str, ...] = ("glb", "obj", "stl", "ply"),
 ) -> Tuple[Image.Image, dict]:
     processed = preprocess(input_image, remove_bg, foreground_ratio)
-    mesh = generate_mesh(processed, mc_resolution)
+    mesh = generate_mesh(processed, mc_resolution, smooth=True, smooth_iterations=5)
     paths = export_meshes(mesh, list(formats))
     return processed, paths
