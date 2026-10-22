@@ -11,13 +11,11 @@ from typing import Optional
 
 
 def find_triposr():
-    """Search common locations for the TripoSR repo."""
     candidates = [
         Path(__file__).resolve().parent.parent.parent / "TripoSR",
         Path.cwd() / "TripoSR",
         Path.home() / "TripoSR",
         Path("C:/TripoSR"),
-        Path("C:/Users") / os.environ.get("USERNAME", "") / "TripoSR",
     ]
     for path in candidates:
         if (path / "tsr").exists():
@@ -45,7 +43,7 @@ class TripoSRModel(BaseImageTo3D):
         except ImportError as e:
             raise ImportError(
                 "Could not import 'tsr' from TripoSR.\n"
-                "Place the TripoSR folder inside this project or set it up via start.bat."
+                "Place the TripoSR folder inside this project."
             ) from e
 
         print(f"Loading TripoSR on {self.device} ...")
