@@ -1,0 +1,17 @@
+torch>=2.1.0
+torchvision
+gradio>=4.0
+fastapi
+uvicorn
+python-multipart
+Pillow
+rembg
+numpy
+trimesh
+huggingface-hub
+omegaconf
+einops
+transformers
+xatlas
+moderngl
+tqdm
