@@ -1,42 +1,23 @@
 # Free Image-to-3D
 
-Open-source local image-to-3D web app. Upload a photo of an object and get a downloadable 3D mesh (GLB / OBJ / STL).
+Open-source image-to-3D tool. Upload a photo and download a 3D mesh (GLB, OBJ, STL, PLY).
 
-Powered by **TripoSR**. The model backend is written so it can later be swapped for other models.
+## Download and Run (Windows)
+
+1. Download the ZIP of this repository and extract it.
+2. Double-click `start.bat`.
+3. Upload a photo and generate a mesh.
+
+Requires Python 3.10+, an NVIDIA GPU, and internet on the first run.
 
 ## Features
 
-- Upload an image
-- Automatic background removal
-- Generate 3D mesh with TripoSR
-- Interactive 3D preview in the browser
-- Download GLB, OBJ, and STL
-- Resolution / quality controls
-- Runs fully locally on your GPU
-
-## Requirements
-
-- Python 3.10+
-- NVIDIA GPU with 6–8 GB+ VRAM
-- CUDA installed
-
-## Project Structure
-Image-to-3D_Meshtastic/
-├── app/
-│   ├── main.py
-│   └── backend/
-│       ├── model.py
-│       ├── processor.py
-│       └── api.py
-├── models/
-├── examples/
-├── requirements.txt
+- Background removal
+- TripoSR mesh generation
+- 3D preview
+- Download GLB / OBJ / STL / PLY
+- Windows launcher that sets up the environment automatically
 
 ## License
 
 MIT
-
-
-├── Dockerfile
-├── LICENSE
-└── README.md
