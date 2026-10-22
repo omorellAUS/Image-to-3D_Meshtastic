@@ -1,0 +1,22 @@
+Free Image-to-3D — Windows Install Notes
+========================================
+
+For the person building / packaging the app:
+1. Install Python 3.10 or 3.11 (add to PATH).
+2. Have Git installed (optional, used by start.bat to auto-clone TripoSR).
+3. Have NVIDIA drivers installed.
+
+For end users:
+1. Download the ZIP from GitHub and extract it.
+2. Double-click start.bat.
+3. First run will create a virtual environment and install packages.
+4. If TripoSR is not present, start.bat will try to clone it.
+5. A browser window opens at http://127.0.0.1:7860
+
+Requirements for users:
+- Windows 10/11
+- Python 3.10+ on PATH
+- NVIDIA GPU with 6–8 GB+ VRAM
+- Internet on first run (to download model weights)
+
+The launcher handles the rest.
