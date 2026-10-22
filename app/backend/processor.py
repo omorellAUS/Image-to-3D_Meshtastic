@@ -72,7 +72,7 @@ def generate_mesh(
 
 def export_meshes(
     mesh: trimesh.Trimesh,
-    formats: List[str] = ("glb", "obj", "stl"),
+    formats: List[str] = ("glb", "obj", "stl", "ply"),
     output_dir: Optional[str] = None,
 ) -> dict:
     if output_dir is None:
@@ -92,7 +92,7 @@ def process_image(
     remove_bg: bool = True,
     foreground_ratio: float = 0.85,
     mc_resolution: int = 256,
-    formats: Tuple[str, ...] = ("glb", "obj", "stl"),
+    formats: Tuple[str, ...] = ("glb", "obj", "stl", "ply"),
 ) -> Tuple[Image.Image, dict]:
     processed = preprocess(input_image, remove_bg, foreground_ratio)
     mesh = generate_mesh(processed, mc_resolution)
