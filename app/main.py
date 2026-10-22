@@ -30,7 +30,7 @@ def run_pipeline(
         remove_bg=remove_bg,
         foreground_ratio=foreground_ratio,
         mc_resolution=int(mc_resolution),
-        formats=("glb", "obj", "stl"),
+        formats=("glb", "obj", "stl", "ply"),
     )
 
     return (
@@ -38,6 +38,7 @@ def run_pipeline(
         paths.get("glb"),
         paths.get("obj"),
         paths.get("stl"),
+        paths.get("ply"),
     )
 
 
@@ -88,11 +89,12 @@ def build_ui():
             glb_file = gr.File(label="Download GLB")
             obj_file = gr.File(label="Download OBJ")
             stl_file = gr.File(label="Download STL")
+            ply_file = gr.File(label="Download PLY")
 
         submit.click(
             fn=run_pipeline,
             inputs=[input_image, remove_bg, foreground_ratio, mc_resolution],
-            outputs=[processed_image, model_3d, glb_file, obj_file, stl_file],
+            outputs=[processed_image, model_3d, glb_file, obj_file, stl_file, ply_file],
         )
 
         gr.Markdown(
