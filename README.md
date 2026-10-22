@@ -21,3 +21,8 @@ Requires Python 3.10+, an NVIDIA GPU, and internet on the first run.
 ## License
 
 MIT
+---
+
+**Download package**
+
+[Download ZIP](https://github.com/omorellAUS/Image-to-3D_Meshtastic/archive/refs/heads/main.zip)
