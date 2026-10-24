@@ -5,6 +5,7 @@ Automatically searches for TripoSR.
 
 import os
 import sys
+import threading
 import torch
 from pathlib import Path
 from typing import Optional
@@ -66,9 +67,27 @@ class TripoSRModel(BaseImageTo3D):
         return mesh
 
 
+_model_cache = {}
+_model_cache_lock = threading.Lock()
+
+
 def get_model(model_name: str = "triposr", device: Optional[str] = None):
+    """Return a cached model instance, loading it on first use only.
+
+    Models are cached per (model name, device) so repeated requests reuse the
+    already-loaded weights instead of reloading them on every click.
+    """
     name = model_name.lower()
-    if name == "triposr":
-        return TripoSRModel(device=device)
-    else:
+    if name != "triposr":
         raise ValueError(f"Unknown model: {model_name}. Available: triposr")
+
+    if device is None:
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+    key = (name, device)
+    with _model_cache_lock:
+        model = _model_cache.get(key)
+        if model is None:
+            model = TripoSRModel(device=device)
+            _model_cache[key] = model
+    return model
