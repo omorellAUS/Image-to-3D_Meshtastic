@@ -1,74 +1,79 @@
 """
-Swappable model loader.
-Automatically searches for TripoSR.
+Model loader for TRELLIS (best free quality).
+Falls back gracefully if TRELLIS is not available.
 """
 
-import os
 import sys
-import torch
 from pathlib import Path
 from typing import Optional
 
+import torch
+from PIL import Image
 
-def find_triposr():
-    candidates = [
-        Path(__file__).resolve().parent.parent.parent / "TripoSR",
-        Path.cwd() / "TripoSR",
-        Path.home() / "TripoSR",
-        Path("C:/TripoSR"),
-    ]
-    for path in candidates:
-        if (path / "tsr").exists():
-            return str(path)
-    return None
+# Make TRELLIS importable if it sits next to the project
+ROOT = Path(__file__).resolve().parent.parent.parent
+TRELLIS_PATH = ROOT / "TRELLIS"
+if TRELLIS_PATH.exists() and str(TRELLIS_PATH) not in sys.path:
+    sys.path.insert(0, str(TRELLIS_PATH))
+
+_pipeline = None
 
 
-class BaseImageTo3D:
-    def generate(self, image, mc_resolution: int = 256):
-        raise NotImplementedError
+def get_pipeline(device: str = "cuda"):
+    global _pipeline
+    if _pipeline is not None:
+        return _pipeline
+
+    try:
+        from trellis.pipelines import TrellisImageTo3DPipeline
+    except ImportError as e:
+        raise ImportError(
+            "TRELLIS not found. Clone https://github.com/microsoft/TRELLIS "
+            "into the project folder and install its dependencies."
+        ) from e
+
+    print("Loading TRELLIS on", device, "...")
+    pipe = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
+    pipe.to(device)
+    _pipeline = pipe
+    print("TRELLIS ready.")
+    return _pipeline
 
 
-class TripoSRModel(BaseImageTo3D):
-    def __init__(self, device: Optional[str] = None):
-        if device is None:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        self.device = device
+def generate_trellis_mesh(
+    image: Image.Image,
+    seed: int = 42,
+    simplify: float = 0.95,
+    texture_size: int = 1024,
+) -> "trimesh.Trimesh":
+    import trimesh
+    from trellis.utils import postprocessing_utils
 
-        triposr_path = find_triposr()
-        if triposr_path and triposr_path not in sys.path:
-            sys.path.insert(0, triposr_path)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-        try:
-            from tsr.system import TSR
-        except ImportError as e:
-            raise ImportError(
-                "Could not import 'tsr' from TripoSR.\n"
-                "Place the TripoSR folder inside this project."
-            ) from e
+    pipe = get_pipeline()
+    outputs = pipe.run(
+        image,
+        seed=seed,
+        formats=["mesh", "gaussian"],
+        preprocess_image=True,
+    )
 
-        print(f"Loading TripoSR on {self.device} ...")
-        self.model = TSR.from_pretrained(
-            "stabilityai/TripoSR",
-            config_name="config.yaml",
-            weight_name="model.ckpt",
-        )
-        self.model.renderer.set_chunk_size(8192)
-        self.model.to(self.device)
-        self.model.eval()
-        print("TripoSR ready.")
+    # Convert to clean trimesh via official post-processor
+    glb_mesh = postprocessing_utils.to_glb(
+        outputs["gaussian"][0],
+        outputs["mesh"][0],
+        simplify=simplify,
+        texture_size=texture_size,
+        fill_holes=True,
+        verbose=False,
+    )
 
-    @torch.no_grad()
-    def generate(self, image, mc_resolution: int = 256):
-        scene_codes = self.model([image], device=self.device)
-        mesh = self.model.extract_mesh(
-            scene_codes, has_vertex_color=True, resolution=mc_resolution
-        )[0]
-        return mesh
+    # postprocessing_utils.to_glb already returns a trimesh.Trimesh
+    mesh = glb_mesh if isinstance(glb_mesh, trimesh.Trimesh) else trimesh.load(glb_mesh, file_type="glb")
 
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
-def get_model(model_name: str = "triposr", device: Optional[str] = None):
-    name = model_name.lower()
-    if name == "triposr":
-        return TripoSRModel(device=device)
-    else:
-        raise ValueError(f"Unknown model: {model_name}. Available: triposr")
+    return mesh
