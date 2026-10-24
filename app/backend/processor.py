@@ -4,6 +4,7 @@ Image preprocessing, mesh generation, and export helpers.
 
 import os
 import tempfile
+import traceback
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -37,30 +38,76 @@ def fill_background(image: Image.Image) -> Image.Image:
     return Image.fromarray((rgb * 255.0).astype(np.uint8))
 
 
+def _has_transparency(image: Image.Image) -> bool:
+    """True if the image has an alpha channel that is not fully opaque."""
+    if image.mode != "RGBA":
+        return False
+    alpha_min, _ = image.getchannel("A").getextrema()
+    return alpha_min < 255
+
+
+def remove_background(image: Image.Image) -> Optional[Image.Image]:
+    """Run rembg on the image. Returns an RGBA cut-out, or None on failure."""
+    try:
+        import rembg
+        session = get_rembg_session()
+        return rembg.remove(image.convert("RGB"), session=session)
+    except Exception as e:
+        print(
+            f"WARNING: background removal (rembg) failed: {e}\n"
+            "WARNING: continuing with the ORIGINAL image - the background was "
+            "NOT removed and the object was NOT re-framed (foreground ratio "
+            "ignored). Mesh quality may be poor."
+        )
+        traceback.print_exc()
+        return None
+
+
+def frame_foreground(image: Image.Image, foreground_ratio: float) -> Image.Image:
+    """Crop/pad an RGBA image around its alpha mask, then fill the background."""
+    from tsr.utils import resize_foreground
+
+    image = resize_foreground(image, foreground_ratio)
+    return fill_background(image)
+
+
 def preprocess(
     input_image: Image.Image,
     remove_bg: bool = True,
     foreground_ratio: float = 0.85,
 ) -> Image.Image:
+    image = input_image
+    if image.mode in ("LA", "PA") or (
+        image.mode == "P" and "transparency" in image.info
+    ):
+        image = image.convert("RGBA")
+
+    has_mask = False
     if remove_bg:
+        cutout = remove_background(image)
+        if cutout is not None:
+            image = cutout
+            has_mask = True
+        # On failure, fall through with the original image (see warning).
+
+    # Frame the object whenever we have an alpha mask: either the rembg
+    # cut-out, or an input that already has a transparent background
+    # (e.g. remove_bg=False with a pre-cut PNG). resize_foreground needs RGBA.
+    if has_mask or _has_transparency(image):
         try:
-            import rembg
-            session = get_rembg_session()
-            image = input_image.convert("RGB")
-            image = rembg.remove(image, session=session)
-            from tsr.utils import resize_foreground
-            image = resize_foreground(image, foreground_ratio)
-            image = fill_background(image)
+            return frame_foreground(image, foreground_ratio)
         except Exception as e:
-            print(f"Background removal failed: {e}")
-            image = input_image.convert("RGB")
-    else:
-        image = input_image
-        if image.mode == "RGBA":
-            image = fill_background(image)
-        else:
-            image = image.convert("RGB")
-    return image
+            print(
+                f"WARNING: framing the foreground failed: {e}\n"
+                "WARNING: continuing with the original image (not re-framed)."
+            )
+            traceback.print_exc()
+            image = input_image
+
+    # No usable alpha mask: keep the image as plain RGB, not re-framed.
+    if image.mode == "RGBA":
+        return fill_background(image)
+    return image.convert("RGB")
 
 
 def generate_mesh(
