@@ -2,6 +2,8 @@
 Gradio frontend for Free Image-to-3D.
 """
 
+import traceback
+
 import gradio as gr
 from PIL import Image
 
@@ -28,8 +30,11 @@ def run_pipeline(image, remove_bg, foreground_ratio, mc_resolution):
             paths.get("ply"),
         )
     except Exception as e:
-        print(f"Generation failed: {e}")
-        return None, None, None, None, None, None
+        # Log the full traceback to the console for debugging, and show the
+        # error in the UI instead of silently returning empty outputs.
+        # gr.Error is handled by Gradio, so the app keeps running.
+        traceback.print_exc()
+        raise gr.Error(f"Generation failed: {e}") from e
 
 
 def build_ui():
