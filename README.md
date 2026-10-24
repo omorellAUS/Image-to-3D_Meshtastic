@@ -46,9 +46,14 @@ First run takes longer while packages and the TripoSR weights download.
 
 ```bat
 python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python app/main.py
+```
 
-Project structure
+## Project structure
 
+```text
 ├── app/
 │   ├── main.py                 # Gradio UI
 │   └── backend/
@@ -58,51 +63,33 @@ Project structure
 ├── requirements.txt
 ├── README.md
 └── LICENSE
+```
 
-RoadmapAlpha (current)
- Single-image TripoSR pipeline
- Background removal
- Multi-format export (GLB, OBJ, STL, PLY)
- Windows launcher
- Basic Gradio UI with preview
+## Roadmap
 
-Beta (planned)
- Mode selector: Fast / Detailed
- TRELLIS single-image (Detailed) path
- Multi-image upload + TRELLIS multi-view
- Low-VRAM options tuned for 12 GB cards
- Better quality controls (resolution, sampling steps)
- Optional model download on first use
+### Alpha (current)
 
-Notes
-TripoSR is single-image only and relatively fast/low-VRAM.
-TRELLIS (and especially TRELLIS.2) gives higher quality and supports multi-view, but needs more VRAM and setup. These will be added in the beta while keeping the current Fast path as the reliable fallback.
-This is an open-source MIT project. Model weights are downloaded separately on first use.
+- [x] Single-image TripoSR pipeline
+- [x] Background removal
+- [x] Multi-format export (GLB, OBJ, STL, PLY)
+- [x] Windows launcher
+- [x] Basic Gradio UI with preview
 
-License
-MIT
+### Beta (planned)
 
-MIT License
+- [ ] Mode selector: Fast / Detailed
+- [ ] TRELLIS single-image (Detailed) path
+- [ ] Multi-image upload + TRELLIS multi-view
+- [ ] Low-VRAM options tuned for 12 GB cards
+- [ ] Better quality controls (resolution, sampling steps)
+- [ ] Optional model download on first use
 
-Copyright (c) 2026 Oliver Ross Morell
+## Notes
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+- TripoSR is single-image only and relatively fast/low-VRAM.
+- TRELLIS (and especially TRELLIS.2) gives higher quality and supports multi-view, but needs more VRAM and setup. These will be added in the beta while keeping the current Fast path as the reliable fallback.
+- This is an open-source MIT project. Model weights are downloaded separately on first use.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## License
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.ok 
-venv\Scripts\activate
-pip install -r requirements.txt
-python app/main.py
+MIT. See [LICENSE](LICENSE).
